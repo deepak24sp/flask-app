@@ -64,7 +64,7 @@ def update_todo(todo_id):
 def delete_todo(todo_id):
     global todos
     todos = [t for t in todos if t['id'] != todo_id]
-    return jsonify({"message": "Todo deleted"})
+    return jsonify({"message": "Todo deleted "})
 
 # Lambda handler function
 def lambda_handler(event, context):
