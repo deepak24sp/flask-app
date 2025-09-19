@@ -12,6 +12,8 @@ def lambda_handler(event, context):
     """
     AWS Lambda handler function for API Gateway events
     """
+    global todos  # Declare global at the beginning of the function
+    
     try:
         # Get HTTP method and path
         http_method = event.get('httpMethod', 'GET')
@@ -123,7 +125,7 @@ def lambda_handler(event, context):
                     'body': json.dumps({"error": "Invalid todo ID"})
                 }
             
-            global todos
+            # Remove the duplicate global declaration that was causing the error
             original_length = len(todos)
             todos = [t for t in todos if t['id'] != todo_id]
             
