@@ -1,6 +1,9 @@
 from flask import Flask, jsonify, request
 import json
 import os
+import sys
+
+sys.path.append(os.path.join(os.environ['LAMBDA_TASK_ROOT'], 'python'))
 
 app = Flask(__name__)
 
