@@ -9,11 +9,9 @@ RUN pip install --no-cache-dir -r requirements.txt --target ./python
 # Stage 2: Lambda final image
 FROM public.ecr.aws/lambda/python:3.11
 
-# Copy dependencies from builder stage
 COPY --from=builder /app/python ${LAMBDA_TASK_ROOT}/
+COPY app.py ${LAMBDA_TASK_ROOT}/
+COPY test_app.py ${LAMBDA_TASK_ROOT}/   # include tests if you want
 
-# Copy application code
-COPY app.py ${LAMBDA_TASK_ROOT}
-
-# Set Lambda handler
+# Default Lambda handler
 CMD ["app.lambda_handler"]
