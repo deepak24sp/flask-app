@@ -1,10 +1,6 @@
-from flask import Flask, jsonify, request
 import json
 import os
 import sys
-
-
-app = Flask(__name__)
 
 # Simple in-memory data store
 todos = [
@@ -12,74 +8,162 @@ todos = [
     {"id": 2, "task": "Deploy Flask app", "completed": False}
 ]
 
-@app.route('/')
-def home():
-    return jsonify({
-        "message": "Welcome to Simple Flask API!",
-        "version": "1.0.0",
-        "endpoints": [
-            "GET /",
-            "GET /todos",
-            "POST /todos",
-            "PUT /todos/<id>",
-            "DELETE /todos/<id>"
-        ]
-    })
-
-@app.route('/health')
-def health():
-    return jsonify({"status": "healthy", "service": "flask-api"})
-
-@app.route('/todos', methods=['GET'])
-def get_todos():
-    return jsonify({"todos": todos})
-
-@app.route('/todos', methods=['POST'])
-def add_todo():
-    data = request.get_json()
-    if not data or 'task' not in data:
-        return jsonify({"error": "Task is required"}), 400
-    
-    new_todo = {
-        "id": len(todos) + 1,
-        "task": data['task'],
-        "completed": data.get('completed', False)
-    }
-    todos.append(new_todo)
-    return jsonify({"todo": new_todo}), 201
-
-@app.route('/todos/<int:todo_id>', methods=['PUT'])
-def update_todo(todo_id):
-    todo = next((t for t in todos if t['id'] == todo_id), None)
-    if not todo:
-        return jsonify({"error": "Todo not found"}), 404
-    
-    data = request.get_json()
-    if 'task' in data:
-        todo['task'] = data['task']
-    if 'completed' in data:
-        todo['completed'] = data['completed']
-    
-    return jsonify({"todo": todo})
-
-@app.route('/todos/<int:todo_id>', methods=['DELETE'])
-def delete_todo(todo_id):
-    global todos
-    todos = [t for t in todos if t['id'] != todo_id]
-    return jsonify({"message": "Todo deleted "})
-
-# Lambda handler function
 def lambda_handler(event, context):
+    """
+    AWS Lambda handler function for API Gateway events
+    """
     try:
-        from serverless_wsgi import handle_request
-        return handle_request(app, event, context)
-    except ImportError:
-        # Fallback for local testing
+        # Get HTTP method and path
+        http_method = event.get('httpMethod', 'GET')
+        path = event.get('path', '/')
+        
+        # Parse request body if present
+        body = {}
+        if event.get('body'):
+            try:
+                body = json.loads(event['body'])
+            except json.JSONDecodeError:
+                return {
+                    'statusCode': 400,
+                    'headers': {'Content-Type': 'application/json'},
+                    'body': json.dumps({'error': 'Invalid JSON in request body'})
+                }
+        
+        # Route handling
+        if path == '/' and http_method == 'GET':
+            response_body = {
+                "message": "Welcome to Simple Flask API!",
+                "version": "1.0.0",
+                "endpoints": [
+                    "GET /",
+                    "GET /todos", 
+                    "POST /todos",
+                    "PUT /todos/<id>",
+                    "DELETE /todos/<id>"
+                ]
+            }
+            return {
+                'statusCode': 200,
+                'headers': {'Content-Type': 'application/json'},
+                'body': json.dumps(response_body)
+            }
+            
+        elif path == '/health' and http_method == 'GET':
+            return {
+                'statusCode': 200,
+                'headers': {'Content-Type': 'application/json'},
+                'body': json.dumps({"status": "healthy", "service": "flask-api"})
+            }
+            
+        elif path == '/todos' and http_method == 'GET':
+            return {
+                'statusCode': 200,
+                'headers': {'Content-Type': 'application/json'},
+                'body': json.dumps({"todos": todos})
+            }
+            
+        elif path == '/todos' and http_method == 'POST':
+            if not body or 'task' not in body:
+                return {
+                    'statusCode': 400,
+                    'headers': {'Content-Type': 'application/json'},
+                    'body': json.dumps({"error": "Task is required"})
+                }
+            
+            new_todo = {
+                "id": len(todos) + 1,
+                "task": body['task'],
+                "completed": body.get('completed', False)
+            }
+            todos.append(new_todo)
+            return {
+                'statusCode': 201,
+                'headers': {'Content-Type': 'application/json'},
+                'body': json.dumps({"todo": new_todo})
+            }
+            
+        elif path.startswith('/todos/') and http_method == 'PUT':
+            # Extract todo ID from path
+            try:
+                todo_id = int(path.split('/')[-1])
+            except ValueError:
+                return {
+                    'statusCode': 400,
+                    'headers': {'Content-Type': 'application/json'},
+                    'body': json.dumps({"error": "Invalid todo ID"})
+                }
+            
+            todo = next((t for t in todos if t['id'] == todo_id), None)
+            if not todo:
+                return {
+                    'statusCode': 404,
+                    'headers': {'Content-Type': 'application/json'},
+                    'body': json.dumps({"error": "Todo not found"})
+                }
+            
+            if 'task' in body:
+                todo['task'] = body['task']
+            if 'completed' in body:
+                todo['completed'] = body['completed']
+            
+            return {
+                'statusCode': 200,
+                'headers': {'Content-Type': 'application/json'},
+                'body': json.dumps({"todo": todo})
+            }
+            
+        elif path.startswith('/todos/') and http_method == 'DELETE':
+            # Extract todo ID from path
+            try:
+                todo_id = int(path.split('/')[-1])
+            except ValueError:
+                return {
+                    'statusCode': 400,
+                    'headers': {'Content-Type': 'application/json'},
+                    'body': json.dumps({"error": "Invalid todo ID"})
+                }
+            
+            global todos
+            original_length = len(todos)
+            todos = [t for t in todos if t['id'] != todo_id]
+            
+            if len(todos) == original_length:
+                return {
+                    'statusCode': 404,
+                    'headers': {'Content-Type': 'application/json'},
+                    'body': json.dumps({"error": "Todo not found"})
+                }
+            
+            return {
+                'statusCode': 200,
+                'headers': {'Content-Type': 'application/json'},
+                'body': json.dumps({"message": "Todo deleted"})
+            }
+        
+        else:
+            return {
+                'statusCode': 404,
+                'headers': {'Content-Type': 'application/json'},
+                'body': json.dumps({"error": "Not found"})
+            }
+            
+    except Exception as e:
+        print(f"Error: {str(e)}")
         return {
             'statusCode': 500,
-            'body': json.dumps({'error': 'serverless_wsgi not available'})
+            'headers': {'Content-Type': 'application/json'},
+            'body': json.dumps({"error": "Internal server error"})
         }
 
+# For local testing
 if __name__ == '__main__':
-    # For local development
-    app.run(debug=True, host='0.0.0.0', port=8000)
+    # Test event
+    test_event = {
+        'httpMethod': 'GET',
+        'path': '/',
+        'body': None
+    }
+    test_context = {}
+    
+    result = lambda_handler(test_event, test_context)
+    print(json.dumps(result, indent=2))

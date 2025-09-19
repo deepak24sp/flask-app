@@ -10,7 +10,7 @@ RUN pip install --no-cache-dir -r requirements.txt --target ./python
 FROM public.ecr.aws/lambda/python:3.11
 
 # Copy dependencies from builder stage
-COPY --from=builder /app/python ${LAMBDA_TASK_ROOT}/python
+COPY --from=builder /app/python ${LAMBDA_TASK_ROOT}/
 
 # Copy application code
 COPY app.py ${LAMBDA_TASK_ROOT}
