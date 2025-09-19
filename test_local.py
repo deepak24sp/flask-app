@@ -15,11 +15,11 @@ from multiprocessing import Process
 def start_flask_app():
     """Start Flask app in background"""
     import app
-    app.app.run(host='0.0.0.0', port=5000, debug=False)
+    app.app.run(host='0.0.0.0', port=8000, debug=False)
 
 def test_api():
     """Test all API endpoints"""
-    base_url = "http://localhost:5000"
+    base_url = "http://localhost:8000"
     
     print("🧪 Testing Flask API locally...\n")
     
