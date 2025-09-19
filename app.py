@@ -15,16 +15,37 @@ def lambda_handler(event, context):
     global todos  # Declare global at the beginning of the function
     
     try:
-        # Get HTTP method and path
-        http_method = event.get('httpMethod', 'GET')
-        path = event.get('path', '/')
+        # Debug: Log the entire event to see what's being sent
+        print(f"Received event: {json.dumps(event)}")
+        
+        # Handle both API Gateway and Function URL formats
+        if 'requestContext' in event and 'http' in event['requestContext']:
+            # Function URL format (newer)
+            http_method = event['requestContext']['http']['method']
+            path = event['requestContext']['http']['path']
+        elif 'httpMethod' in event:
+            # API Gateway format (older)
+            http_method = event.get('httpMethod', 'GET')
+            path = event.get('path', '/')
+        else:
+            # Fallback
+            http_method = 'GET'
+            path = '/'
+        
+        print(f"Parsed - Method: {http_method}, Path: {path}")
         
         # Parse request body if present
         body = {}
-        if event.get('body'):
+        raw_body = event.get('body', '')
+        if raw_body:
             try:
-                body = json.loads(event['body'])
-            except json.JSONDecodeError:
+                # Handle base64 encoded body (Function URL sometimes does this)
+                if event.get('isBase64Encoded', False):
+                    import base64
+                    raw_body = base64.b64decode(raw_body).decode('utf-8')
+                body = json.loads(raw_body)
+            except (json.JSONDecodeError, ValueError) as e:
+                print(f"Error parsing body: {e}")
                 return {
                     'statusCode': 400,
                     'headers': {'Content-Type': 'application/json'},
