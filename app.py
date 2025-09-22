@@ -12,7 +12,7 @@ todos = [
 @app.route("/", methods=["GET"])
 def home():
     return jsonify({
-        "message": "Welcome to Simple Flask API!",
+        "message": "Welcome to Simple Flask API!, deployment check",
         "version": "1.0.0",
         "endpoints": [
             "GET /",
