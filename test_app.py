@@ -12,7 +12,7 @@ def test_home(client):
     assert resp.status_code == 200
     data = resp.get_json()
     assert "message" in data
-    assert data["message"] == "Welcome to Simple Flask API!"
+    assert data["message"] == "Welcome to Simple Flask API!, deployment check"
 
 def test_health(client):
     resp = client.get("/health")
