@@ -7,6 +7,7 @@ app = Flask(__name__)
 todos = [
     {"id": 1, "task": "currently  AWS Lambda", "completed": False},
     {"id": 2, "task": "Deploy Flask app", "completed": False},
+    {"id":3,"task":"testing deployment","completed":False},
     {"id":3,"task":"testing deployment","completed":False}
     
 ]
