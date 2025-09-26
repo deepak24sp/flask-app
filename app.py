@@ -5,7 +5,7 @@ app = Flask(__name__)
 
 # In-memory store
 todos = [
-    {"id": 1, "task": "Learn AWS Lambda", "completed": False},
+    {"id": 1, "task": "currently  AWS Lambda", "completed": False},
     {"id": 2, "task": "Deploy Flask app", "completed": False},
     {"id":3,"task":"testing deployment","completed":False}
     
